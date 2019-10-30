@@ -1,4 +1,4 @@
-(function(size, number, timer, cg) {
+(function(size, number, timer, threshold, network, cg) {
   'use strict';
 
   let mode = {
@@ -36,10 +36,16 @@
   ctx.LineCap = 'round';
 
   function pxls(t) {
+    /**
+     * If we have run through all pixels, set t back to 0, begin running
+     * the wipe() function, and return.
+     */
     if (t >= width * height) {
+      t = 0;
+      wipe(t);
       return;
     }
-    d3.json(`/get_${mode}/${t},${number}`, {
+    d3.json(`/get_${mode}/${t},${number}/${threshold}/${network}`, {
       headers: {
         'Content-type': 'application/json; charset=UTF-8'
       }}).then(json => {
@@ -57,6 +63,10 @@
     setTimeout(pxls.bind({}, t), timer);
   }
 
+  function wipe(t) {
+
+  }
+
   d3.json(`/init/${width}/${height}`,
     {
       headers: {'Content-type': 'application/json; charset=UTF-8'}
@@ -65,4 +75,4 @@
       pxls(0);
     });
 
-})(size, number, timer, cg);
+})(size, number, timer, threshold, network, cg);

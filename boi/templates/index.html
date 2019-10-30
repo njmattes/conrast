@@ -30,6 +30,20 @@
   const timer = {{ timer }};
 
   /**
+   * Algorithm changes from random to averaged pixels once the
+   * reciprocal of the threshold of area of screen is covered.
+   * @type {number}
+   */
+  const threshold = {{ threshold }};
+
+  /**
+   * Determines the number of nearest pixels to average from when
+   * determining colors.
+   * @type {number}
+   */
+  const network = {{ network }};
+
+  /**
    * Whether to draw in color ('c') or greyscale ('g')
    * @type {string}
    */

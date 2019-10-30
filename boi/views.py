@@ -19,12 +19,19 @@ mod = Blueprint('boi_main', __name__)
 @mod.route('/color/<cg>/<int:size>')
 @mod.route('/color/<cg>/<int:size>/<int:number>')
 @mod.route('/color/<cg>/<int:size>/<int:number>/<int:timer>')
-def index(cg='g', size=20, number=10, timer=20):
+@mod.route('/color/<cg>/<int:size>/<int:number>/<int:timer>/<int:threshold>')
+@mod.route('/color/<cg>/<int:size>/<int:number>/<int:timer>/<int:threshold>/'
+           '<int:network>')
+@mod.route('/color/<cg>/size/<int:size>/number/<int:number>/timer/<int:timer>/'
+           'threshold/<int:threshold>/network/<int:network>')
+def index(cg='g', size=20, number=10, timer=20, threshold=30, network=3):
     return render_template(
         'index.html',
         size=size,
         number=number,
         timer=timer,
+        threshold=threshold,
+        network=network,
         cg=cg,
     )
 
@@ -45,11 +52,12 @@ def init(width, height):
     )
 
 
-@mod.route('/get_gpxl/<int:idx>,<int:n>')
-def get_gpxl(idx, n):
+@mod.route('/get_gpxl/<int:idx>,<int:n>/<int:threshold>/<int:network>')
+def get_gpxl(idx, n, threshold, network):
     ordered_idxs = np.arange(idx, idx + n)
     shuffled_idxs = get_shuffled_idxs(ordered_idxs, session.sid)
-    pxl_dicts = get_pxl_dicts(shuffled_idxs, ordered_idxs, session.sid)
+    pxl_dicts = get_pxl_dicts(shuffled_idxs, ordered_idxs, threshold, network,
+                              session.sid)
     write_pixels(pxl_dicts, session.sid)
     return Response(
         json.dumps({'pxls': pxl_dicts}),
@@ -57,12 +65,25 @@ def get_gpxl(idx, n):
     )
 
 
-@mod.route('/get_cpxl/<int:idx>,<int:n>')
-def get_cpxl(idx, n):
+@mod.route('/get_cpxl/<int:idx>,<int:n>/<int:threshold>/<int:network>')
+def get_cpxl(idx, n, threshold, network):
     ordered_idxs = np.arange(idx, idx+n)
     shuffled_idxs = get_shuffled_idxs(ordered_idxs, session.sid)
-    pxl_dicts = get_pxl_dicts(shuffled_idxs, ordered_idxs,
+    pxl_dicts = get_pxl_dicts(shuffled_idxs, ordered_idxs, threshold, network,
                               session.sid, grey=False)
+    write_pixels(pxl_dicts, session.sid)
+    return Response(
+        json.dumps({'pxls': pxl_dicts}),
+        mimetype='application/json',
+    )
+
+
+@mod.route('/get_half_pxl/<int:idx>,<int:n>/<int:threshold>/<int:network>')
+def get_half_pxl(idx, n, threshold, network):
+    ordered_idxs = np.arange(idx, idx+n)
+    shuffled_idxs = get_shuffled_idxs(ordered_idxs, session.sid)
+    pxl_dicts = get_pxl_dicts(shuffled_idxs, ordered_idxs, threshold, network,
+                              session.sid, grey=False, )
     write_pixels(pxl_dicts, session.sid)
     return Response(
         json.dumps({'pxls': pxl_dicts}),
@@ -117,7 +138,8 @@ def scale_coord(_coord, _p=1.0):
     return (_coord / max(_w, _h)) * 10 * _p
 
 
-def get_pxl_dicts(shuffled_idxs, ordered_idxs, sid, grey=True):
+def get_pxl_dicts(shuffled_idxs, ordered_idxs, threshold, network,
+                  sid, grey=True):
     """Creates a dictionary representation of the pixel for inserting
     into Mongo.
 
@@ -144,14 +166,15 @@ def get_pxl_dicts(shuffled_idxs, ordered_idxs, sid, grey=True):
             color=get_average_color(
                 [scale_coord(xy[0]),
                  scale_coord(xy[1])],
+                network,
                 sid)
-            if ordered_idxs[i] > _a / 30
+            if ordered_idxs[i] > _a / threshold
             else get_random_color(grey=grey)
         ) for i, xy in enumerate(get_xys(shuffled_idxs))
     ]
 
 
-def get_average_color(lonlat, sid):
+def get_average_color(lonlat, network, sid):
     """Blend the colors of the pixels nearest the target pixel.
 
     :param lonlat: The scaled (x, y) coordinates of the pixel in Mongo
@@ -169,7 +192,7 @@ def get_average_color(lonlat, sid):
             [n['loc'][0], n['loc'][1],
              n['c'][0], n['c'][1], n['c'][2],
              1 / n['dist']])
-        for n in get_near(lonlat, 3, sid)])
+        for n in get_near(lonlat, network, sid)])
     # Weight the average of the color components by the distance
     # from the target pixel.
     return ((nears[:, 5] / nears[:, 5].sum()).reshape(
