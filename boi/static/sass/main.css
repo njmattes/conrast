@@ -12,4 +12,9 @@ html {
   overflow: hidden;
 }
 
+canvas {
+  display: block;
+  margin: 0 auto;
+}
+
 /*# sourceMappingURL=main.css.map */

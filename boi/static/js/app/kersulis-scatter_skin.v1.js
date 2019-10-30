@@ -31,9 +31,7 @@
     .select('main')
     .append('canvas')
     .attr('width', width * size)
-    .attr('height', height * size)
-    .style('margin', `${padding.top}px auto 0`)
-    .style('display', 'block');
+    .attr('height', height * size);
   const ctx = canvas.node().getContext('2d');
   ctx.LineCap = 'round';
 
