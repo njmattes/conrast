@@ -1,31 +1,13 @@
-(function() {
+(function(size, number, timer, cg) {
   'use strict';
 
   let mode = {
     'g': 'gpxl',
     'c': 'cpxl',
-  }['g'];
+  }[cg];
 
   let width = window.innerWidth;
   let height = window.innerHeight;
-
-  /**
-   * Size of pixels
-   * @type {number}
-   */
-  const size = 20;
-
-  /**
-   * Amount of pixels to draw at one time
-   * @type {number}
-   */
-  const number = 10;
-
-  /**
-   * Interval in milliseconds between drawing pixels
-   * @type {number}
-   */
-  const timer = 20;
 
   /**
    * Padding multiplier
@@ -85,4 +67,4 @@
       pxls(0);
     });
 
-})();
+})(size, number, timer, cg);

@@ -3,11 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <title>Boi</title>
-  <link rel=stylesheet href=../static/sass/main.css media=all>
+  <link rel=stylesheet href=/static/sass/main.css media=all>
 </head>
 <body>
 <main></main>
-<script src=../static/js/vendor/d3.v5.min.js></script>
+<script src=/static/js/vendor/d3.v5.min.js></script>
+<script>
+
+  /**
+   * Size of pixels. Defaults to 20.
+   * @type {number}
+   */
+  const size = {{ size }};
+
+  /**
+   * Amount of pixels to draw at one time. Defaults to 10.
+   * @type {number}
+   */
+  const number = {{ number }};
+
+  /**
+   * Interval in milliseconds between drawing pixels.
+   * Defaults to 20.
+   * @type {number}
+   */
+  const timer = {{ timer }};
+
+  /**
+   * Whether to draw in color ('c') or greyscale ('g')
+   * @type {string}
+   */
+  const cg = '{{ cg }}';
+
+</script>
+
 {% assets 'js_app' %}
   <script src={{ ASSET_URL }}></script>
 {% endassets %}

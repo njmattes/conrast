@@ -15,9 +15,17 @@ mod = Blueprint('boi_main', __name__)
 
 
 @mod.route('/')
-def index():
+@mod.route('/color/<cg>')
+@mod.route('/color/<cg>/<int:size>')
+@mod.route('/color/<cg>/<int:size>/<int:number>')
+@mod.route('/color/<cg>/<int:size>/<int:number>/<int:timer>')
+def index(cg='g', size=20, number=10, timer=20):
     return render_template(
-        'index.html'
+        'index.html',
+        size=size,
+        number=number,
+        timer=timer,
+        cg=cg,
     )
 
 
