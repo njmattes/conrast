@@ -8,6 +8,7 @@ from boi.mongo import init_collection
 from boi.mongo import write_idxs
 from boi.mongo import write_pixels
 from boi.mongo import get_shuffled_idxs
+from boi.mongo import tint_pixels
 from boi.mongo import get_near
 
 
@@ -78,15 +79,28 @@ def get_cpxl(idx, n, threshold, network):
     )
 
 
-@mod.route('/get_half_pxl/<int:idx>,<int:n>/<int:threshold>/<int:network>')
+@mod.route('/get_half_pxls/<int:idx>,<int:n>/<int:threshold>/<int:network>')
 def get_half_pxl(idx, n, threshold, network):
     ordered_idxs = np.arange(idx, idx+n)
     shuffled_idxs = get_shuffled_idxs(ordered_idxs, session.sid)
-    pxl_dicts = get_pxl_dicts(shuffled_idxs, ordered_idxs, threshold, network,
-                              session.sid, grey=False, )
-    write_pixels(pxl_dicts, session.sid)
+    foo = tint_pixels(idx, shuffled_idxs, session.sid)
     return Response(
-        json.dumps({'pxls': pxl_dicts}),
+        json.dumps({'pxls': [
+            {'xy': get_xy(f['idx']),
+             'color': f['c']}
+            for f in foo[0]],
+            'n': foo[1],  # Number of indexes left to tint
+            't': foo[2],  # Current index in loop
+        }),
+        mimetype='application/json',
+    )
+
+
+@mod.route('/get_nonwhite_n')
+def get_nonwhite_n():
+    from boi.mongo import get_nonwhite_n
+    return Response(
+        json.dumps({'n': get_nonwhite_n(session.sid)}),
         mimetype='application/json',
     )
 
@@ -154,22 +168,29 @@ def get_pxl_dicts(shuffled_idxs, ordered_idxs, threshold, network,
     :return: Dictionary of pixel properties
     :rtype: dict
     """
+
+    def get_color(xy, i):
+        _color = [None, None, None]
+        if ordered_idxs[i] > _a / threshold:
+            _color = get_average_color(
+                [scale_coord(xy[0]),
+                 scale_coord(xy[1])],
+                network,
+                sid)
+        else:
+            _color = get_random_color(grey=grey)
+        return _color
+
     _a = session['area']
     _p = 1  # proportion, less than 1 stretches vertically, \
     # more than 1 stretches horizontally
     return [
         dict(
-            x=xy[0],
-            y=xy[1],
+            xy=xy,
             lon=scale_coord(xy[0]),
             lat=scale_coord(xy[1]),
-            color=get_average_color(
-                [scale_coord(xy[0]),
-                 scale_coord(xy[1])],
-                network,
-                sid)
-            if ordered_idxs[i] > _a / threshold
-            else get_random_color(grey=grey)
+            color=get_color(xy, i),
+            idx=shuffled_idxs[i],
         ) for i, xy in enumerate(get_xys(shuffled_idxs))
     ]
 

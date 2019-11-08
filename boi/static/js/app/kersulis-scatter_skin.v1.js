@@ -42,7 +42,7 @@
      */
     if (t >= width * height) {
       t = 0;
-      wipe(t);
+      wipe(t, width * height);
       return;
     }
     d3.json(`/get_${mode}/${t},${number}/${threshold}/${network}`, {
@@ -50,29 +50,59 @@
         'Content-type': 'application/json; charset=UTF-8'
       }}).then(json => {
         for (let i = 0; i < json['pxls'].length; ++i) {
-          let r = json.pxls[i].color[0];
-          let g = json.pxls[i].color[1];
-          let b = json.pxls[i].color[2];
-          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 1)`;
-          ctx.beginPath();
-          ctx.rect(json.pxls[i].x * size, json.pxls[i].y * size, size, size);
-          ctx.fill();
+          fill_pxl(
+            json.pxls[i].color,
+            json.pxls[i].xy
+          );
         }
       });
     t += number;
     setTimeout(pxls.bind({}, t), timer);
   }
 
-  function wipe(t) {
-
+  async function wipe(t, n) {
+    /**
+     * Wipe screen clean by increasing R, G, B values to 255 incrementally
+     */
+    if (n <= 50) {  // If no indexes left to tint
+      init_db();
+      t = 0;
+      pxls(t);
+      return;
+    }
+    if (t >= n) {  // If current index in loop is >= indexes left to tint
+      t = 0;  // Start back at 0
+    }
+    let json = await d3.json(`/get_half_pxls/${t},${number}/${threshold}/${network}`, {
+      headers: {'Content-type': 'application/json; charset=UTF-8'}});
+    for (let i = 0; i < json['pxls'].length; ++i) {
+      fill_pxl(
+        json.pxls[i].color,
+        json.pxls[i].xy
+      );
+    }
+    n = json.n;
+    t += number;
+    console.log(t, n);
+    setTimeout(wipe.bind({}, t, n), timer);
   }
 
-  d3.json(`/init/${width}/${height}`,
-    {
-      headers: {'Content-type': 'application/json; charset=UTF-8'}
-    }).then(json => {
+  const fill_pxl = function fill_pxl(rgb, xy) {
+    ctx.fillStyle = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 1)`;
+    ctx.beginPath();
+    ctx.rect(xy[0] * size, xy[1] * size, size, size);
+    ctx.fill();
+  };
+
+  async function init_db() {
+    let json = await d3.json(`/init/${width}/${height}`,
+      {headers: {'Content-type': 'application/json; charset=UTF-8'}});
+    if (json.success) {
       console.log('db initialized');
       pxls(0);
-    });
+    }
+  }
+
+  init_db();
 
 })(size, number, timer, threshold, network, cg);
