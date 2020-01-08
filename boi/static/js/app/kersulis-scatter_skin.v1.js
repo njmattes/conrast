@@ -55,7 +55,7 @@
           let b = json.pxls[i].color[2];
           ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 1)`;
           ctx.beginPath();
-          ctx.rect(json.pxls[i].x * size, json.pxls[i].y * size, size, size);
+          ctx.rect(json.pxls[i].xy[0] * size, json.pxls[i].xy[1] * size, size, size);
           ctx.fill();
         }
       });
